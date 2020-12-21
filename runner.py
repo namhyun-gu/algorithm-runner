@@ -1,6 +1,7 @@
-import datetime
-import subprocess
 import argparse
+import datetime
+import os
+import subprocess
 
 import yaml
 from colored import bg, fg, stylize
@@ -65,7 +66,7 @@ parser.add_argument("--cwd", type=str, default=None)
 
 args = parser.parse_args()
 
-cwd = args.cwd
+cwd = args.cwd if args.cwd else os.path.dirname(os.path.abspath(args.config))
 config = yaml.load(open(args.config), Loader=yaml.FullLoader)
 
 if "script" not in config:
