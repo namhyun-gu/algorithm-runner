@@ -1,0 +1,14 @@
+script: python test.py
+tests:
+  - input: |
+      1 2 3
+    output: |
+      6
+  - input: |
+      1 2 4
+    output: |
+      6
+  - input: |
+      1 a 1
+    output: |
+      2
