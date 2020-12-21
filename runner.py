@@ -1,7 +1,7 @@
 import argparse
-import datetime
 import os
 import subprocess
+import time
 
 import yaml
 from colored import bg, fg, stylize
@@ -17,9 +17,25 @@ def padded(message: str):
         print(f"  {line}")
 
 
+def label(tag: str, message: str, bg_color: str):
+    print(stylize(f" {tag.upper()} ", fg("white") + bg(bg_color)), end=" ")
+    print(stylize(message, fg("white")))
+
+
+def run_script(script: str, input: str):
+    input = bytes(input, "utf-8")
+    start_at = time.time()
+    process = subprocess.run(script, capture_output=True, input=input, cwd=cwd)
+    end_at = time.time()
+    elspased = round((end_at - start_at) * 1000)
+    return process, elspased
+
+
 def launch(script: str, tests: list):
     passed = 0
-    failed = 0
+    total_time = 0
+
+    print(stylize(f"\n* Run '{script}'\n", fg("white")))
 
     for index, test in enumerate(tests):
         index += 1
@@ -27,37 +43,32 @@ def launch(script: str, tests: list):
         input: str = test["input"].rstrip()
         output: str = test["output"].rstrip()
 
-        start_at = datetime.datetime.now()
-        process = subprocess.run(
-            script, capture_output=True, input=bytes(input, "utf-8"), cwd=cwd
-        )
-        end_at = datetime.datetime.now()
-        elspased = round((end_at - start_at).total_seconds(), 4)
+        process, elspased = run_script(script, input)
+        total_time += elspased
+
         if process.returncode == 0:
             actual = process.stdout.decode("utf-8").rstrip()
             if actual == output:
                 passed += 1
-                print(stylize("  PASS  ", fg("white") + bg("green")), end=" ")
-                print(f"Test {index}", end=" ")
-                print(f"({elspased} ms)")
+                label("pass", f"Test Case {index} ({elspased}ms)", "green")
             else:
-                failed += 1
-                print(stylize("  FAIL  ", fg("white") + bg("red")), end=" ")
-                print(f"Test {index}", end=" ")
-                print(f"({elspased} ms)")
+                label("fail", f"Test Case {index} ({elspased}ms)", "red")
+                print("\n- Input\n")
+                padded(input)
                 print("\n- Expected\n")
-                padded(output)
+                padded(stylize(output, fg("green")))
                 print("\n- Actual\n")
-                padded(actual)
+                padded(stylize(actual, fg("red")))
                 print()
         else:
-            failed += 1
-            print(stylize("  FAIL  ", fg("white") + bg("red")), end=" ")
-            print(f"Test {index}", end=" ")
-            print(f"({elspased} ms)\n")
+            label("fail", f"Test Case {index} ({elspased}ms)", "red")
+            print()
             print(process.stderr.decode("utf-8"))
 
-    print(f"\nFinished {len(tests)} tests. (pass: {passed}, fail: {failed})")
+    print(
+        "Tests:\t" + stylize(f"{passed} passed", fg("green")) + f", {len(tests)} total"
+    )
+    print(f"Time:\t{round(total_time / 1000, 3)}s\n")
 
 
 parser = argparse.ArgumentParser()
