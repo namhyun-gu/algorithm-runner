@@ -25,7 +25,9 @@ def label(tag: str, message: str, bg_color: str):
 def run_script(script: str, input: str):
     input = bytes(input, "utf-8")
     start_at = time.time()
-    process = subprocess.run(script, capture_output=True, input=input, cwd=cwd)
+    process = subprocess.run(
+        script, capture_output=True, input=input, cwd=cwd, timeout=timeout
+    )
     end_at = time.time()
     elspased = round((end_at - start_at) * 1000)
     return process, elspased
@@ -43,28 +45,38 @@ def launch(script: str, tests: list):
         input: str = test["input"].rstrip()
         output: str = test["output"].rstrip()
 
-        process, elspased = run_script(script, input)
-        total_time += elspased
+        try:
+            process, elspased = run_script(script, input)
 
-        if process.returncode == 0:
-            actual = process.stdout.decode("utf-8").rstrip()
-            if actual == output:
-                passed += 1
-                label("pass", f"Test Case {index} ({elspased}ms)", "green")
+            total_time += elspased
+
+            if process.returncode == 0:
+                actual = process.stdout.decode("utf-8").rstrip()
+                if actual == output:
+                    passed += 1
+                    label("pass", f"Test Case {index} ({elspased}ms)", "green")
+                else:
+                    label("fail", f"Test Case {index} ({elspased}ms)", "red")
+                    print("\n- Input\n")
+                    padded(input)
+                    print("\n- Expected\n")
+                    padded(stylize(output, fg("green")))
+                    print("\n- Actual\n")
+                    padded(stylize(actual, fg("red")))
+                    print()
             else:
                 label("fail", f"Test Case {index} ({elspased}ms)", "red")
                 print("\n- Input\n")
                 padded(input)
-                print("\n- Expected\n")
-                padded(stylize(output, fg("green")))
-                print("\n- Actual\n")
-                padded(stylize(actual, fg("red")))
                 print()
-        else:
-            label("fail", f"Test Case {index} ({elspased}ms)", "red")
-            print()
-            print(process.stderr.decode("utf-8"))
+                print(stylize(process.stderr.decode("utf-8"), fg("red")))
+        except subprocess.TimeoutExpired:
+            total_time += timeout * 1000
 
+            label("fail", f"Test Case {index} ({timeout}s)", "red")
+            print("\n- Input\n")
+            padded(input)
+            print(stylize("\nTimeoutExpired\n", fg("red")))
     print(
         "Tests:\t" + stylize(f"{passed} passed", fg("green")) + f", {len(tests)} total"
     )
@@ -88,15 +100,16 @@ if "tests" not in config:
 
 script = config["script"]
 tests = config["tests"]
+timeout = config["timeout"] if "timeout" in config else None
 
 if not isinstance(tests, list):
     err("Require 'tests' is list")
 
-if isinstance(script, list):
-    for index, s in enumerate(script):
-        index += 1
+if timeout and not isinstance(timeout, int):
+    err("Require 'timeout' is int")
 
-        print(stylize(f"\nLaunch script {index}\n", fg("white")))
-        launch(s, tests)
-else:
-    launch(script, tests)
+if not isinstance(script, list):
+    script = [script]
+
+for s in script:
+    launch(s, tests)

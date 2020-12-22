@@ -33,6 +33,7 @@ optional arguments:
    
     ```yaml
     script: python test.py
+    timeout: 10
     tests:
       - input: |
           1 2 3
@@ -76,6 +77,16 @@ script: node test.js
 script:
     - python test.py
     - node test.js
+```
+
+### timeout
+
+Runner가 스크립트 수행 시 timeout 시간(초)
+
+이 값을 지정하면 스크립트 수행 시 해당 시간을 초과할 떄 `TimeoutExpired` 에러를 출력합니다.
+
+```yaml
+timeout: 10
 ```
 
 ### tests
