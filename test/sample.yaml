@@ -1,4 +1,7 @@
-script: python test.py
+script:
+  build: powershell -command "Start-Sleep 1"
+  run: python test.py
+  clean: powershell -command "Start-Sleep 1"
 context:
   timeout: 10
   workdir: test/

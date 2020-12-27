@@ -54,6 +54,9 @@ optional arguments:
 ```yaml
 script:
   - [string]
+  - build: [optional/string]
+    run: [string]
+    clean: [optional/string]
 context:
   timeout: [optional/integer]
   workdir: [optional/string]
@@ -64,30 +67,41 @@ tests:
 
 ### script
 
-Runner가 수행할 스크립트
-
-- 하나의 스크립트 파일 실행
-
-Python 스크립트를 테스트할 경우 다음과 같이 작성합니다.
+Runner가 수행할 스크립트 내용을 작성합니다.  
+스크립트 내용은 필요에 따라 여러 형태로 작성이 가능합니다.
 
 ```yaml
 script: python test.py
+
+# 이는 다음과 같습니다.
+
+script:
+  - python test.py
 ```
 
-다른 언어를 테스트할 경우 `script` 자리를 변경해주면 됩니다.
-
-```yaml
-script: node test.js
-```
-
-- 여러 스크립트 파일 실행
-
-동일한 테스트 케이스에 대해 여러 언어를 테스트할 경우 `script`를 리스트 형태로 작성하면 됩니다.
+빌드 및 빌드 이후 작업이 필요한 경우
+테스트 수행 시 run 스크립트만 실행하여 테스트합니다.
 
 ```yaml
 script:
-    - python test.py
-    - node test.js
+  build: gcc test.c test.out
+  run: ./test.out
+  clean: rm -rf test.out
+
+# 이는 다음과 같습니다.
+
+script:
+  - build: gcc test.c test.out
+    run: ./test.out
+    clean: rm -rf test.out
+```
+
+여러 스크립트 파일을 사용하는 경우
+
+```yaml
+script:
+  - python test.py
+  - node test.js
 ```
 
 ### context

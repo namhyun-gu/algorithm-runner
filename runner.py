@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import os
 import subprocess
@@ -5,9 +7,10 @@ import time
 from dataclasses import dataclass
 
 import yaml
+from rich import traceback
 from rich.console import Console
 from rich.table import Table
-from rich import traceback
+
 
 @dataclass
 class TestCase:
@@ -22,8 +25,30 @@ class Context:
 
 
 @dataclass
+class Script:
+    run: str
+    build: str = None
+    clean: str = None
+
+    @staticmethod
+    def to_script(item: any) -> Script:
+        if isinstance(item, str):
+            return Script(item)
+        elif isinstance(item, dict):
+            run = item["run"] if "run" in item else err("Require 'run' in script")
+
+            build = item["build"] if "build" in item else None
+
+            clean = item["clean"] if "clean" in item else None
+
+            return Script(run, build, clean)
+        else:
+            err("Unsupported script type")
+
+
+@dataclass
 class Config:
-    scripts: list[any]
+    scripts: list[Script]
     tests: list[TestCase]
     context: Context
 
@@ -43,9 +68,17 @@ def run_script(context: Context, script: str, input: str):
     return process, elspased
 
 
-def launch(context: Context, script: str, tests: list):
+def launch(context: Context, script: Script, tests: list):
     passed = 0
     total_time = 0
+
+    if script.build:
+        with console.status("Run build..."):
+            process, elspased = run_script(Context(), script.build, "")
+            if process.returncode != 0:
+                stderr = process.stderr.decode("utf-8")
+                console.print(f"[red]Build Failed[/red]\n{stderr}")
+                return
 
     with console.status("Run tests..."):
         for index, test in enumerate(tests):
@@ -57,7 +90,7 @@ def launch(context: Context, script: str, tests: list):
             table = Table(show_header=False, show_edge=False, show_lines=True)
 
             try:
-                process, elspased = run_script(context, script, input)
+                process, elspased = run_script(context, script.run, input)
 
                 total_time += elspased
 
@@ -92,7 +125,14 @@ def launch(context: Context, script: str, tests: list):
                 table.add_row("Error", f"[red]TimeoutExpired")
                 console.print(table, "\n")
 
-        print_summary(passed, len(tests), round(total_time / 1000, 3))
+    if script.clean:
+        with console.status("Run clean..."):
+            process, elspased = run_script(Context(), script.build, "")
+            if process.returncode != 0:
+                stderr = process.stderr.decode("utf-8")
+                console.print(f"[red]Clean Failed[/red]\n{stderr}")
+
+    print_summary(passed, len(tests), round(total_time / 1000, 3))
 
 
 def print_pass(message: str):
@@ -125,11 +165,10 @@ def load_config(path: str) -> Config:
         else err("Require [bold]'script'[/bold] variable in config")
     )
 
-    if isinstance(scripts, str):
+    if isinstance(scripts, str) or isinstance(scripts, dict):
         scripts = [scripts]
 
-    if not (isinstance(scripts, list) or isinstance(scripts, str)):
-        err("Require [bold]'script'[/bold] is [bold]string or list[/bold]")
+    scripts = list(map(lambda item: Script.to_script(item), scripts))
 
     tests = (
         config["tests"]
