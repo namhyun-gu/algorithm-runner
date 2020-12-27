@@ -1,5 +1,7 @@
 script: python test.py
-timeout: 10
+context:
+  timeout: 10
+  workdir: test/
 tests:
   - input: |
       1 2 3
@@ -13,3 +15,7 @@ tests:
       1 a 1
     output: |
       2
+  - input: |
+      100
+    output: |
+      err

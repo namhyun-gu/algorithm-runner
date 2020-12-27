@@ -10,14 +10,13 @@
 ## 사용방법
 
 ```bash
-usage: runner.py [-h] [--cwd CWD] config
+usage: runner.py [-h] config
 
 positional arguments:
   config
 
 optional arguments:
   -h, --help  show this help message and exit
-  --cwd CWD
 ```
 
 ## 설치
@@ -33,7 +32,8 @@ optional arguments:
    
     ```yaml
     script: python test.py
-    timeout: 10
+    context:
+      timeout: 10
     tests:
       - input: |
           1 2 3
@@ -49,7 +49,18 @@ optional arguments:
           2
     ```
 
-## Yaml 작성 방법
+## Yaml Schema
+
+```yaml
+script:
+  - [string]
+context:
+  timeout: [optional/integer]
+  workdir: [optional/string]
+tests:
+  - input: [string]
+    output: [string]
+```
 
 ### script
 
@@ -79,15 +90,28 @@ script:
     - node test.js
 ```
 
-### timeout
+### context
 
-Runner가 스크립트 수행 시 timeout 시간(초)
+Runner가 테스트 수행 시 사용할 옵션들을 포함
 
-이 값을 지정하면 스크립트 수행 시 해당 시간을 초과할 떄 `TimeoutExpired` 에러를 출력합니다.
+- workdir
+  
+  Runner가 스크립트를 수행할 Working Directory  
+  값이 비어있을 경우 스크립트가 위치한 폴더를 사용
 
-```yaml
-timeout: 10
-```
+  ```yaml
+  context:
+    workdir: test/
+  ```
+
+- timeout
+
+  Runner가 스크립트 수행 시 timeout 시간(초)  
+  이 값을 지정하면 스크립트 수행 시 해당 시간을 초과할 떄 `TimeoutExpired` 에러를 출력합니다.
+
+  ```yaml
+  timeout: 10
+  ```
 
 ### tests
 
