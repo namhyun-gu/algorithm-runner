@@ -9,28 +9,10 @@
 
 ## 사용방법
 
-```bash
-usage: runner.py [-h] config
-
-positional arguments:
-  config
-
-optional arguments:
-  -h, --help  show this help message and exit
-```
-
-## 설치
-
-1. 이 저장소를 원하는 경로에 클론합니다.
-2. 클론한 위치에서 아래의 명령어로 필요한 라이브러리들을 설치합니다.
-   
-   ```
-   pip install -r requirements.txt
-   ```
-
-3. Runner 실행을 위한 yaml 파일을 작성합니다.
-   
+1. dist/ 폴더에 포함된 runner.exe를 원하는 위치에 다운로드합니다.
+2. Runner 실행을 위한 yaml 파일을 작성합니다.
     ```yaml
+    # test.yaml
     script: python test.py
     context:
       timeout: 10
@@ -47,6 +29,11 @@ optional arguments:
           1 a 1
         output: |
           2
+    ```
+3. PowerShell이나 명령 프롬프트에서 runner.exe를 실행합니다.
+  
+    ```bash
+    runner.exe test.yaml
     ```
 
 ## Yaml Schema

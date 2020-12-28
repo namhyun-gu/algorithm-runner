@@ -1,2 +1,5 @@
 .venv
 .vscode
+/build
+*.spec
+__pycache__
